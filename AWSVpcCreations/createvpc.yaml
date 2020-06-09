@@ -2,19 +2,11 @@
 AWSTemplateFormatVersion: 2010-09-09
 
 
-Description: AWS Bastion Creation Coded 9th of June, 2020
+Description: AWS VPC creation autiomations, Coded 9th of June, 2020
 
 Parameters:
-  EnvironmentName:
-    Description: The environment names with prefixes are required
-    Type: String
 
-  VpcCIDR:
-    Description: CIDR notation of IP ranges
-    Type: String
-    Default: 10.192.0.0/16
-
-  PublicSubnet1CIDR:
+PublicSubnet1CIDR:
     Description: CIDR notation of IP ranges ((Defauls are used))
     Type: String
     Default: 10.192.10.0/24
@@ -33,6 +25,14 @@ Parameters:
     Description: CIDR notation of IP ranges
     Type: String
     Default: 10.192.21.0/24
+  EnvironmentName:
+    Description: The environment names with prefixes are required
+    Type: String
+
+  VpcCIDR:
+    Description: CIDR notation of IP ranges
+    Type: String
+    Default: 10.192.0.0/16
 
 Resources:
   VPC:
@@ -80,6 +80,23 @@ Resources:
         - Key: Name
           Value: !Sub ${EnvironmentName} Public Subnet (AZ2)
 
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName} Public Routes
+
+  DefaultPublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+
   PrivateSubnet1:
     Type: AWS::EC2::Subnet
     Properties:
@@ -126,22 +143,7 @@ Resources:
       AllocationId: !GetAtt NatGateway2EIP.AllocationId
       SubnetId: !Ref PublicSubnet2
 
-  PublicRouteTable:
-    Type: AWS::EC2::RouteTable
-    Properties:
-      VpcId: !Ref VPC
-      Tags:
-        - Key: Name
-          Value: !Sub ${EnvironmentName} Public Routes
-
-  DefaultPublicRoute:
-    Type: AWS::EC2::Route
-    DependsOn: InternetGatewayAttachment
-    Properties:
-      RouteTableId: !Ref PublicRouteTable
-      DestinationCidrBlock: 0.0.0.0/0
-      GatewayId: !Ref InternetGateway
-
+  
   PublicSubnet1RouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
